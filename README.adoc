@@ -1,0 +1,53 @@
+= Deoplete GitHub completion =
+
+deoplete-gh is a #modern GitHub completion plugin for vim#.
+Works fast and securely.
+
+== Features ==
+Fast::
+Combination of *deoplete* and *GitHub GraphiQL API* speeds up completion. +
+All the information is fetched by only one api hit for each of the user/issue completion. +
+You're also free from API rate limit!
+Secure::
+Delegate authorization process to https://github.com/cli/cli[GitHub’s official command line tool]. +
+No need to prepare new token and worry about security risk of writing it into `~/.bashrc`. +
+You can do all the things in private repository with ease!
+
+== Completion targets ==
+All completion will be done based on current working directory and on `gitcommit` filetype.
+
+* When you started to type `+#[number]+` or `+#[title]+`, deoplete-gh lists up the opened issues and pull requests with full titles and substitute them to correct `+#[number]+`. +
+  The most recently opened one shows up the first.
+* When you started to type `@[login name]`, it lists up who commented to or created issue/pull requests. +
+  Who talks most shows up the first.
+
+== Dependencies ==
+* https://github.com/cli/cli[GitHub CLI]
+* https://github.com/Shougo/deoplete.nvim[Deoplete]
+
+
+== Installation ==
+Use your favourite plugin manager. That's it!
+
+Just do it like this:
+
+[source, vim]
+.vim-plug
+----
+Plug 'Shougo/deoplete.nvim'
+Plug 'aiotter/deoplete-gh.vim'
+let g:deoplete#enable_at_startup = 1
+----
+
+[source, vim]
+.dein
+----
+call dein#add('Shougo/deoplete.nvim')
+call dein#add('aiotter/deoplete-gh.vim')
+let g:deoplete#enable_at_startup = 1
+----
+
+
+== TODO ==
+- [ ] Make it more customizable
+- [ ] Add nice screenshots to this document
