@@ -7,7 +7,7 @@ import importlib.util
 spec = importlib.util.spec_from_file_location('issue', Path(__file__).parent.parent / 'libs/issue.py')
 issue = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(issue)
-get_candidate_from_issue = issue.get_candidate_from_issue
+get_candidates_from_issues = issue.get_candidates_from_issues
 
 
 class Source(Base):
@@ -42,5 +42,4 @@ class Source(Base):
     #         return []
 
     def gather_candidates(self, context):
-        width = bool(self._issues) and len(str(self._issues[0]['number']))
-        return [get_candidate_from_issue(issue, width) for issue in self._issues]
+        return get_candidates_from_issues(self._issues)
