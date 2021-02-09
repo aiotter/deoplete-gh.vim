@@ -21,6 +21,9 @@ class Source(Base):
         self.filetypes = ['gitcommit']
         self.matchers = ['matcher_number_title']
         self.sorters = ['sorter_number']
+        self.converters = ['converter_remove_overlap', 'converter_truncate_abbr',
+                           'converter_truncate_kind',  # 'converter_truncate_info',
+                           'converter_truncate_menu']
 
         process = subprocess.run(
             ['gh', 'api', '/repos/:owner/:repo/issues?per_page=100'], capture_output=True)
