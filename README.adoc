@@ -5,7 +5,7 @@ Works fast and securely.
 
 == Features ==
 Fast::
-Combination of *deoplete* and *GitHub GraphiQL API* speeds up completion. +
+Combination of *deoplete* and *GitHub GraphQL API* speeds up completion. +
 All the information is fetched by only one api hit for each of the user/issue completion. +
 You're also free from API rate limit!
 Secure::
