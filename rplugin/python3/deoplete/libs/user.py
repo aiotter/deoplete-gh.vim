@@ -51,6 +51,28 @@ def query_GQL() -> GitHubUser:
                     }
                   }
                 }
+                pullRequests(last: 100) {
+                  nodes {
+                    author {
+                      __typename
+                      login
+                      ... on User {
+                        name
+                      }
+                    }
+                    comments(last: 100) {
+                      nodes {
+                        author {
+                          __typename
+                          login
+                          ... on User {
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
         '''], capture_output=True)
@@ -62,9 +84,11 @@ def query_GQL() -> GitHubUser:
 def generate_github_users(data: typing.Dict) -> GitHubUser:
     if not data:
         return
-    for issue in data['data']['repository']['issues']['nodes']:
-        author = issue['author']
-        yield GitHubUser(type=author['__typename'], login=author['login'], name=author['name'])
-        for comment in issue['comments']['nodes']:
+    issues = data['data']['repository']['issues']['nodes']
+    pulls = data['data']['repository']['pullRequests']['nodes']
+    for target in issues + pulls:
+        author = target['author']
+        yield GitHubUser(type=author['__typename'], login=author['login'], name=author.get('name'))
+        for comment in target['comments']['nodes']:
             author = comment['author']
-            yield GitHubUser(type=author['__typename'], login=author['login'], name=author['name'])
+            yield GitHubUser(type=author['__typename'], login=author['login'], name=author.get('name'))
