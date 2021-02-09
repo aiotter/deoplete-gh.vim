@@ -4,12 +4,6 @@ from deoplete.util import UserContext, Candidates
 from deoplete.util import fuzzy_escape
 import re
 
-from pathlib import Path
-import importlib.util
-spec = importlib.util.spec_from_file_location('issue', Path(__file__).parent.parent / 'libs/issue.py')
-issue = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(issue)
-
 
 class Filter(Base):
     def __init__(self, vim: Nvim) -> None:
@@ -27,7 +21,7 @@ class Filter(Base):
 
         results = []
         for candidate in context['candidates']:
-            title = issue.get_title_from_candidate(candidate)
+            title = candidate['_data'].title
             p = re.compile(fuzzy_escape(complete_str, context['camelcase']))
             if context['ignorecase']:
                 if p.search(title.lower()):
