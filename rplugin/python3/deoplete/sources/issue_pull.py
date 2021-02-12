@@ -20,12 +20,11 @@ class Source(Base):
         self.converters = ['converter_remove_overlap', 'converter_truncate_abbr',
                            'converter_truncate_kind',  # 'converter_truncate_info',
                            'converter_truncate_menu']
-
-        self.handler = gql.GqlHandler(vim)
+        self.creator = gql.GitHubCandidatesCreator(vim)
 
     def get_complete_position(self, context):
         pos = context['input'].rfind('#')
         return pos if pos < 0 else pos + 1
 
     def gather_candidates(self, context):
-        return self.handler.issue_candidates + self.handler.pull_candidates
+        return self.creator.issue_candidates + self.creator.pull_candidates

@@ -14,6 +14,68 @@ Pull = namedtuple('PR', ('number', 'title', 'body', 'labels', 'closed'))
 User = namedtuple('User', ('type', 'login', 'name'))
 
 
+class GitHubCandidatesCreator:
+    def __init__(self, vim: Nvim):
+        self._GQL_handler = GqlHandler(vim)
+
+    @property
+    def user_candidates(self) -> Candidates:
+        users = Counter(self._GQL_handler.get_users())
+        max_login_length = max(len(user.login) for user in users) if users else None
+        return [
+            {
+                'word': user.login,
+                'abbr': '@{0:{width}}{1}'.format(user.login,
+                                                 f" - {user.name}" if user.name else '',
+                                                 width=max_login_length),
+                'kind': user.type,
+
+                # number of comments, issues and PRs sent by the user
+                '_sort_key': users[user],
+
+                '_data': user,
+            } for user in users
+        ]
+
+    @property
+    def issue_candidates(self) -> Candidates:
+        issues = list(self._GQL_handler.get_issues())
+        max_issue_num_digits = len(str(issues[0].number)) if issues else None
+
+        def create_candidate(issue: Issue):
+            labels = ' '.join(f"[{label.name}]" for label in issue.labels)
+            body = issue.body.replace('\r', '')
+            return {
+                'word': str(issue.number),
+                'abbr': '#{0:<{width}} {1}'.format(
+                    issue.number, issue.title, width=max_issue_num_digits),
+                'kind': 'Issue',
+                'info': f" {labels or ' == No Labels == '} \n{body}",
+                '_data': issue,
+            }
+
+        return [create_candidate(issue) for issue in issues]
+
+    @property
+    def pull_candidates(self) -> Candidates:
+        pulls = list(self._GQL_handler.get_pulls())
+        max_pull_num_digits = len(str(pulls[0].number)) if pulls else None
+
+        def create_candidate(pull: Pull):
+            labels = ' '.join(f"[{label.name}]" for label in pull.labels)
+            body = pull.body.replace('\r', '')
+            return {
+                'word': str(pull.number),
+                'abbr': '#{0:<{width}} {1}'.format(
+                    pull.number, pull.title, width=max_pull_num_digits),
+                'kind': 'PullReq',
+                'info': f" {labels or ' == No Labels == '} \n{body}",
+                '_data': pull,
+            }
+
+        return [create_candidate(pull) for pull in pulls]
+
+
 class GqlHandler:
     def __init__(self, vim: Nvim):
         self.vim = vim
@@ -107,7 +169,7 @@ class GqlHandler:
         self.vim.current.buffer.vars['deoplete_gh_data'] = process.stdout
         self.data = json.loads(process.stdout)
 
-    def _get_users(self) -> typing.Generator[User, None, None]:
+    def get_users(self) -> typing.Generator[User, None, None]:
         if not self.data:
             return
         issues = self.data['data']['repository']['issues']['nodes']
@@ -119,23 +181,7 @@ class GqlHandler:
                 author = comment['author']
                 yield User(type=author['__typename'], login=author['login'], name=author.get('name'))
 
-    @property
-    def user_candidates(self) -> Candidates:
-        counter = Counter(self._get_users())
-        max_login_length = max(len(user.login) for user in counter) if counter else 0
-        return [
-            {
-                'word': user.login,
-                'abbr': '@{0:{width}}{1}'.format(user.login,
-                                                 f" - {user.name}" if user.name else '',
-                                                 width=max_login_length),
-                'kind': user.type,
-                '_sort_key': counter[user],
-                '_data': user,
-            } for user in counter
-        ]
-
-    def _get_issues(self) -> typing.Generator[Issue, None, None]:
+    def get_issues(self) -> typing.Generator[Issue, None, None]:
         if not self.data:
             return
         issues = self.data['data']['repository']['issues']['nodes']
@@ -148,26 +194,7 @@ class GqlHandler:
                 labels=labels,
                 closed=issue['closed'])
 
-    @property
-    def issue_candidates(self) -> Candidates:
-        issues = list(self._get_issues())
-        max_issue_num_digits = len(str(issues[0].number)) if issues else 0
-
-        def create_candidate(issue: Issue):
-            labels = ' '.join(f"[{label.name}]" for label in issue.labels)
-            body = issue.body.replace('\r', '')
-            return {
-                'word': str(issue.number),
-                'abbr': '#{0:<{width}} {1}'.format(
-                    issue.number, issue.title, width=max_issue_num_digits),
-                'kind': 'Issue',
-                'info': f" {labels or ' == No Labels == '} \n{body}",
-                '_data': issue,
-            }
-
-        return [create_candidate(issue) for issue in issues]
-
-    def _get_pulls(self) -> typing.Generator[Pull, None, None]:
+    def get_pulls(self) -> typing.Generator[Pull, None, None]:
         if not self.data:
             return
         pulls = self.data['data']['repository']['pullRequests']['nodes']
@@ -179,22 +206,3 @@ class GqlHandler:
                 body=pull['body'],
                 labels=labels,
                 closed=pull['closed'])
-
-    @property
-    def pull_candidates(self) -> Candidates:
-        pulls = list(self._get_pulls())
-        max_pull_num_digits = len(str(pulls[0].number)) if pulls else 0
-
-        def create_candidate(pull: Pull):
-            labels = ' '.join(f"[{label.name}]" for label in pull.labels)
-            body = pull.body.replace('\r', '')
-            return {
-                'word': str(pull.number),
-                'abbr': '#{0:<{width}} {1}'.format(
-                    pull.number, pull.title, width=max_pull_num_digits),
-                'kind': 'PullReq',
-                'info': f" {labels or ' == No Labels == '} \n{body}",
-                '_data': pull,
-            }
-
-        return [create_candidate(pull) for pull in pulls]
