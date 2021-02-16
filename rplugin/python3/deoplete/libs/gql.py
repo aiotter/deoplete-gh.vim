@@ -18,6 +18,9 @@ class GitHubCandidatesCreator:
     def __init__(self, vim: Nvim):
         self._GQL_handler = GqlHandler(vim)
 
+    def ensure_cache(self):
+        self._GQL_handler.ensure_cache()
+
     @property
     def user_candidates(self) -> Candidates:
         users = Counter(self._GQL_handler.get_users())
@@ -79,6 +82,12 @@ class GitHubCandidatesCreator:
 class GqlHandler:
     def __init__(self, vim: Nvim):
         self.vim = vim
+        self.data = None
+
+    def ensure_cache(self):
+        if self.data is not None:
+            return
+
         buffer = self.vim.current.buffer
 
         # If the other instances have already hit the api, or are trying to hit now,
@@ -170,8 +179,10 @@ class GqlHandler:
         self.data = json.loads(process.stdout or '{}')
 
     def get_users(self) -> typing.Generator[User, None, None]:
+        self.ensure_cache()
         if not self.data:
             return
+
         issues = self.data['data']['repository']['issues']['nodes']
         pulls = self.data['data']['repository']['pullRequests']['nodes']
         for target in issues + pulls:
@@ -182,8 +193,10 @@ class GqlHandler:
                 yield User(type=author['__typename'], login=author['login'], name=author.get('name'))
 
     def get_issues(self) -> typing.Generator[Issue, None, None]:
+        self.ensure_cache()
         if not self.data:
             return
+
         issues = self.data['data']['repository']['issues']['nodes']
         for issue in issues:
             labels = [Label(name=n['name']) for n in issue['labels']['nodes']]
@@ -195,8 +208,10 @@ class GqlHandler:
                 closed=issue['closed'])
 
     def get_pulls(self) -> typing.Generator[Pull, None, None]:
+        self.ensure_cache()
         if not self.data:
             return
+
         pulls = self.data['data']['repository']['pullRequests']['nodes']
         for pull in pulls:
             labels = [Label(name=n['name']) for n in pull['labels']['nodes']]

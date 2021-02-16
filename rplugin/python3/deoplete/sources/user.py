@@ -18,6 +18,10 @@ class Source(Base):
         self.sorters = ['sorter_comments']
         self.creator = gql.GitHubCandidatesCreator(vim)
 
+    def on_event(self, context):
+        # create cache
+        self.creator.ensure_cache()
+
     def get_complete_position(self, context):
         pos = context['input'].rfind('@')
         return pos if pos < 0 else pos + 1
