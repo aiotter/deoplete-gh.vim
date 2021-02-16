@@ -166,8 +166,8 @@ class GqlHandler:
                   }
                 }
             '''], capture_output=True)
-        self.vim.current.buffer.vars['deoplete_gh_data'] = process.stdout
-        self.data = json.loads(process.stdout)
+        self.vim.current.buffer.vars['deoplete_gh_data'] = process.stdout or '{}'
+        self.data = json.loads(process.stdout or '{}')
 
     def get_users(self) -> typing.Generator[User, None, None]:
         if not self.data:
