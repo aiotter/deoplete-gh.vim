@@ -10,12 +10,16 @@ spec.loader.exec_module(gql)
 class Source(Base):
     def __init__(self, vim):
         super().__init__(vim)
-        self.name = 'github_user'
+        self.name = 'github_issue_pull'
         self.mark = '[GitHub]'
         self.rank = 500
-        self.input_pattern = r'@.*'
+        self.input_pattern = r'#.*'
         self.filetypes = ['gitcommit']
-        self.sorters = ['sorter_comments']
+        self.matchers = ['matcher_number_title', 'matcher_opened']
+        self.sorters = ['sorter_number']
+        self.converters = ['converter_remove_overlap', 'converter_truncate_abbr',
+                           'converter_truncate_kind',  # 'converter_truncate_info',
+                           'converter_truncate_menu']
         self.creator = gql.GitHubCandidatesCreator(vim)
 
     def on_event(self, context):
@@ -23,8 +27,8 @@ class Source(Base):
         self.creator.ensure_cache()
 
     def get_complete_position(self, context):
-        pos = context['input'].rfind('@')
+        pos = context['input'].rfind('#')
         return pos if pos < 0 else pos + 1
 
     def gather_candidates(self, context):
-        return self.creator.user_candidates
+        return self.creator.issue_candidates + self.creator.pull_candidates
